@@ -362,7 +362,7 @@
 
         <div class="preview-overlay" id="previewOverlay">
           <img id="previewImage" alt="พรีวิวภาพ" />
-          <p id="previewFileName"></p>
+
           <button type="button" onclick="clearPreview()" title="ลบภาพ">✖</button>
         </div>
         
@@ -386,7 +386,7 @@
   const inputWrapper = document.getElementById('inputWrapper');
   const previewOverlay = document.getElementById('previewOverlay');
   const previewImage = document.getElementById('previewImage');
-  const previewFileName = document.getElementById('previewFileName');
+ 
 
   let pendingImageData = null;
   let pendingImageFile = null;
@@ -479,26 +479,32 @@
   imageInputCamera.addEventListener('change', (e) => handleImageSelection(e.target.files[0]));
 
   function handleImageSelection(file) {
-    if (!file || !file.type.startsWith('image/')) {
-      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
-      imageInputFile.value = '';
-      imageInputCamera.value = '';
-      return;
-    }
-
-    pendingImageFile = file;
-    const reader = new FileReader();
-    reader.onload = () => {
-      pendingImageData = reader.result;
-      previewImage.src = reader.result;
-      previewFileName.textContent = file.name;
-      previewOverlay.style.display = 'flex';
-      inputWrapper.classList.add('has-image');
-      input.placeholder = 'เพิ่มคำถามของคุณที่นี่...';
-      input.focus();
-    };
-    reader.readAsDataURL(file);
+  if (!file || !file.type.startsWith('image/')) {
+    alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+    imageInputFile.value = '';
+    imageInputCamera.value = '';
+    return;
   }
+
+  pendingImageFile = file;
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    pendingImageData = reader.result;
+    previewImage.src = reader.result;
+    
+    // ✅ ลบบรรทัดนี้ออก เพราะไม่มี element ที่ชื่อ previewFileName:
+    // previewFileName.textContent = file.name;
+
+    previewOverlay.style.display = 'flex';
+    inputWrapper.classList.add('has-image');
+    input.placeholder = 'เพิ่มคำถามของคุณที่นี่...';
+    input.focus();
+  };
+
+  reader.readAsDataURL(file);
+}
+
 
   function clearPreview() {
     previewOverlay.style.display = 'none';

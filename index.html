@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>เข้าสู่ระบบ - หมอวัว</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap');
+
+    /* Background gradient + subtle pattern */
+    body {
+      font-family: "Kanit", sans-serif;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #1b4332 0%, #74c69d 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+    /* subtle animated circles background */
+    body::before {
+      content: "";
+      position: absolute;
+      width: 120%;
+      height: 120%;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255 255 255 / 0.1) 0%, transparent 70%),
+        radial-gradient(circle at 80% 70%, rgba(255 255 255 / 0.08) 0%, transparent 60%);
+      animation: floatBG 25s linear infinite;
+      z-index: 0;
+      top: -10%;
+      left: -10%;
+    }
+    @keyframes floatBG {
+      0% {background-position: 20% 30%, 80% 70%;}
+      50% {background-position: 25% 25%, 85% 65%;}
+      100% {background-position: 20% 30%, 80% 70%;}
+    }
+
+    .login-container {
+      position: relative;
+      z-index: 1;
+      background: rgba(255 255 255 / 0.15);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-radius: 25px;
+      padding: 50px 60px;
+      width: 360px;
+      text-align: center;
+      color: #fff;
+      animation: fadeIn 1.2s ease forwards;
+      opacity: 0;
+    }
+    @keyframes fadeIn {
+      to {opacity: 1;}
+    }
+
+    .logo {
+      width: 130px;
+      height: 130px;
+      margin: 0 auto 25px;
+      background: url('icon.png') no-repeat center / contain;
+      border-radius: 50%;
+      box-shadow:
+        0 8px 20px rgba(0,0,0,0.7),
+        inset 0 0 15px rgba(255, 255, 255, 0.3);
+      transition: transform 0.3s ease;
+    }
+    .logo:hover {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    h1 {
+      font-weight: 700;
+      font-size: 3.2rem;
+      margin: 0 0 40px 0;
+      text-shadow: 2px 4px 8px rgba(0,0,0,0.5);
+      letter-spacing: 1.4px;
+      user-select: none;
+    }
+
+    button {
+      font-size: 1.25rem;
+      font-weight: 700;
+      width: 100%;
+      padding: 16px 0;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(90deg, #4285F4 0%, #357AE8 100%);
+      color: white;
+      box-shadow:
+        0 6px 12px rgba(66, 133, 244, 0.5),
+        0 4px 6px rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+      user-select: none;
+      font-family: 'Kanit', sans-serif;
+    }
+    button:hover {
+      background: linear-gradient(90deg, #3367D6 0%, #2A56C6 100%);
+      box-shadow:
+        0 8px 18px rgba(51, 103, 214, 0.7),
+        0 6px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Google icon svg inside button */
+    button svg {
+      width: 24px;
+      height: 24px;
+      filter: drop-shadow(0 0 1px rgba(0,0,0,0.3));
+    }
+
+  </style>
+</head>
+<body>
+  <div class="login-container" role="main" aria-label="เข้าสู่ระบบ หมอวัว">
+    <div class="logo" aria-label="โลโก้ หมอวัว"></div>
+    <h1>หมอวัว</h1>
+    <button id="googleSignInBtn" aria-label="เข้าสู่ระบบด้วย Google">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 533.5 544.3" aria-hidden="true" focusable="false">
+        <path fill="#4285F4" d="M533.5 278.4c0-18.4-1.6-36-4.7-53.2H272v100.7h146.9c-6.3 34-25.2 62.8-53.7 82v68.2h86.9c50.8-46.8 80.4-115.8 80.4-197.7z"/>
+        <path fill="#34A853" d="M272 544.3c72.3 0 133-23.9 177.3-64.9l-86.9-68.2c-24.1 16.2-55 25.8-90.4 25.8-69.4 0-128.3-46.9-149.4-110.1H36.7v69.1c44.4 87.8 135.9 148.3 235.3 148.3z"/>
+        <path fill="#FBBC05" d="M122.6 325.3c-10-29.2-10-60.6 0-89.8v-69.1H36.7c-38 74.9-38 162.3 0 237.2l85.9-78.3z"/>
+        <path fill="#EA4335" d="M272 107.6c39.3 0 74.6 13.5 102.3 39.7l76.6-76.6C399.8 24 344.1 0 272 0 172.6 0 81.1 60.5 36.7 148.3l85.9 78.3c21.1-63.2 80-110.1 149.4-110.1z"/>
+      </svg>
+      เข้าสู่ระบบด้วย Google
+    </button>
+  </div>
+
+  <script type="module">
+    import { auth, provider, signInWithPopup, onAuthStateChanged } from './firebase.js';
+
+    const btn = document.getElementById('googleSignInBtn');
+
+    btn.addEventListener('click', async () => {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        // เข้าสู่ระบบสำเร็จ
+        window.location.href = 'main.html';
+      } catch (error) {
+        alert('เกิดข้อผิดพลาดในการเข้าสู่ระบบ: ' + error.message);
+      }
+    });
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        window.location.href = 'main.html';
+      }
+    });
+  </script>
+</body>
+</html>

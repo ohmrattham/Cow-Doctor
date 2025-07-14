@@ -1,16 +1,17 @@
-require("dotenv").config();
-const express = require("express");
-const axios = require("axios");
-const tf = require("@tensorflow/tfjs-node");
-const { createCanvas, loadImage } = require("canvas");
-const cors = require("cors");
+import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
+import axios from "axios";
+import * as tf from "@tensorflow/tfjs-node";
+import { createCanvas, loadImage } from "canvas";
+import cors from "cors";
 
 const app = express();
-app.use(express.json({ limit: '10mb' })); // รองรับ base64 image ใหญ่สุด 10MB
+app.use(express.json({ limit: '10mb' }));
 
-// อนุญาต CORS จาก GitHub Pages frontend ของคุณ (เปลี่ยน URL ให้ตรงกับของคุณ)
 app.use(cors({
-  origin: 'https://ohmrattham.github.io'  // <-- เปลี่ยนเป็นโดเมน frontend ของคุณ
+  origin: 'https://ohmrattham.github.io'
 }));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -32,7 +33,6 @@ let model;
   }
 })();
 
-// ชื่อโรคตามโมเดล
 const classNames = [
   "โรคไข้ 3 วัน",
   "โรคปากเท้าเปื่อย",
@@ -42,26 +42,20 @@ const classNames = [
   "โรคลัมปีสกิน"
 ];
 
-// ฟังก์ชันวิเคราะห์ภาพจาก Base64
 async function analyzeImage(base64Data, mimeType) {
   try {
-    // แปลง base64 เป็น buffer
     const buffer = Buffer.from(base64Data, "base64");
 
-    // โหลดภาพด้วย canvas
     const img = await loadImage(buffer);
     const canvas = createCanvas(224, 224);
     const ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, 224, 224);
 
-    // แปลงภาพเป็น tensor
     const input = tf.browser.fromPixels(canvas).toFloat().div(255).expandDims(0);
 
-    // พยากรณ์
     const prediction = model.predict(input);
     const scores = prediction.arraySync()[0];
 
-    // หาค่าความน่าจะเป็นสูงสุด
     const maxScore = Math.max(...scores);
     const maxIndex = scores.indexOf(maxScore);
 
@@ -92,10 +86,8 @@ app.post("/api/chat", async (req, res) => {
     let prompt = "";
 
     if (diseaseDetected) {
-      // ถ้าเจอโรค ให้ถาม Gemini เกี่ยวกับโรคนั้นโดยตรง
       prompt = `ขอข้อมูลเกี่ยวกับโรค ${diseaseDetected} ในวัว และวิธีการรักษาและป้องกันโรคนี้`;
     } else {
-      // ถ้าไม่เจอโรค หรือไม่มีภาพ ก็ใช้ประวัติแชท + input ปกติ
       if (Array.isArray(chatHistory)) {
         prompt = chatHistory
           .map((item) => (item.role === "user" ? "ผู้ใช้: " : "AI: ") + item.text)
@@ -104,7 +96,6 @@ app.post("/api/chat", async (req, res) => {
       prompt += "\nผู้ใช้: " + textInput + "\nAI:";
     }
 
-    // เรียก Gemini API
     const response = await axios.post(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
@@ -120,7 +111,6 @@ app.post("/api/chat", async (req, res) => {
       response.data.candidates?.[0]?.content?.parts?.[0]?.text ||
       "ขอโทษครับ ผมไม่สามารถตอบได้ตอนนี้";
 
-    // ถ้าเจอโรค ให้แจ้งผู้ใช้ด้วยข้อความเฉพาะ
     if (diseaseDetected) {
       reply = `✅ ตรวจพบว่าอาจเป็น: ${diseaseDetected}\n\n📖 ${reply}`;
     }

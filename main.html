@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ระบบดูแลวัว</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit&display=swap" rel="stylesheet" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+
   <style>
     body {
       font-family: 'Kanit', sans-serif;
@@ -454,6 +456,25 @@
   outline: none;
 }
 
+#bigAddCowBtn {
+  display: block;
+  margin: 1rem auto;
+  padding: 0.7rem 2rem;
+  border: 2px solid #2d6a4f;
+  border-radius: 9999px;
+  background: #2d6a4f;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+#bigAddCowBtn:hover {
+  background: #1e382d;
+  transform: scale(1.05);
+}
 
 
   </style>
@@ -502,9 +523,8 @@
       </div>
     </section>
 
-    <!-- ปุ่มจองคิวสัตวแพทย์ -->
-<button id="bookDoctorBtn" title="จองคิวสัตวแพทย์" aria-label="จองคิวสัตวแพทย์">
-  🐄 จองคิวสัตวแพทย์
+    <button id="bigAddCowBtn" title="เพิ่มข้อมูลวัว" aria-label="เพิ่มข้อมูลวัว">
+  ➕ เพิ่มข้อมูลวัว
 </button>
 
 
@@ -585,9 +605,10 @@
 
   <script type="module">
   import {
-    auth, db, storage, collection, addDoc, query, where, getDocs, serverTimestamp,
-    onAuthStateChanged, signOut, doc, deleteDoc, getDoc, updateDoc
-  } from './firebase.js';
+  auth, db, storage, collection, addDoc, query, where, getDocs, serverTimestamp,
+  onAuthStateChanged, signOut, doc, deleteDoc, getDoc, updateDoc, setDoc
+} from './firebase.js';
+
 
   import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 
@@ -800,7 +821,6 @@ if (userDoc.exists()) {
     const birthday = document.getElementById('modalCowBirthday').value;
     const weight = parseFloat(document.getElementById('modalCowWeight').value) || '';
     const vaccine = document.getElementById('modalCowVaccine').value.trim();
-    const nextVisit = document.getElementById('modalCowNextVisit').value;
     const detail = document.getElementById('modalCowDetail').value.trim();
 
     if (!name || !detail) {
@@ -979,9 +999,12 @@ profileForm.onsubmit = async (e) => {
     alert("เกิดข้อผิดพลาด: " + error.message);
   }
 };
-const bookDoctorBtn = document.getElementById('bookDoctorBtn');
-bookDoctorBtn.onclick = () => {
-  window.location.href = 'booking.html';
+
+
+const bigAddCowBtn = document.getElementById('bigAddCowBtn');
+bigAddCowBtn.onclick = () => {
+  currentEditId = null;
+  openCowModal();
 };
 
 </script>

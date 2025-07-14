@@ -19,31 +19,28 @@ import {
   deleteDoc,
   updateDoc,
   getDoc,
-  setDoc   // ต้องมี setDoc ด้วย
+  setDoc
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import {
   getStorage
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
 
-// ตั้งค่า Firebase ของคุณ
 const firebaseConfig = {
   apiKey: "AIzaSyBuK-lFcSg6gTb1j2rccsk4KeufTKUbdJA",
   authDomain: "cow-doctor.firebaseapp.com",
   projectId: "cow-doctor",
-  storageBucket: "cow-doctor.appspot.com",
+  storageBucket: "cow-doctor.firebasestorage.app",
   messagingSenderId: "630940653087",
   appId: "1:630940653087:web:84b07c02cb9b643348a72a",
   measurementId: "G-PKSWWWG462"
 };
 
-// เริ่มเชื่อมต่อ Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// export ตัวที่ต้องใช้ในไฟล์อื่น
 export {
   auth,
   provider,
@@ -62,5 +59,5 @@ export {
   deleteDoc,
   updateDoc,
   getDoc,
-  setDoc   // สำคัญมาก ต้องมีตัวนี้ด้วย
+  setDoc
 };

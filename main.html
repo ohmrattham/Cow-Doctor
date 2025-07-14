@@ -622,7 +622,7 @@
 
   // กำหนด max ของ input type=date เป็นวันที่ปัจจุบัน
   document.getElementById('modalCowBirthday').max = new Date().toISOString().split('T')[0];
-  document.getElementById('modalCowNextVisit').max = new Date().toISOString().split('T')[0];
+  
 
   // ตรวจสอบสถานะการล็อกอิน ถ้าไม่ล็อกอินให้กลับหน้า index.html
   onAuthStateChanged(auth, async (u) => {
@@ -778,7 +778,6 @@ if (userDoc.exists()) {
       document.getElementById('modalCowBirthday').value = cow.birthday || '';
       document.getElementById('modalCowWeight').value = cow.weight || '';
       document.getElementById('modalCowVaccine').value = cow.vaccine || '';
-      document.getElementById('modalCowNextVisit').value = cow.nextVisit || '';
       document.getElementById('modalCowDetail').value = cow.detail || '';
     } else {
       modalCowForm.reset();
@@ -826,7 +825,6 @@ if (userDoc.exists()) {
         birthday,
         weight,
         vaccine,
-        nextVisit,
         detail,
         updatedAt: serverTimestamp(),
       };

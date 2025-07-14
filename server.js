@@ -1,13 +1,17 @@
 require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
-const fs = require("fs");
 const tf = require("@tensorflow/tfjs-node");
 const { createCanvas, loadImage } = require("canvas");
-const multer = require("multer");
+const cors = require("cors");
 
 const app = express();
-app.use(express.json({ limit: '10mb' })); // เพิ่ม limit สำหรับ base64 image
+app.use(express.json({ limit: '10mb' })); // รองรับ base64 image ใหญ่สุด 10MB
+
+// อนุญาต CORS จาก GitHub Pages frontend ของคุณ (เปลี่ยน URL ให้ตรงกับของคุณ)
+app.use(cors({
+  origin: 'https://ohmrattham.github.io'  // <-- เปลี่ยนเป็นโดเมน frontend ของคุณ
+}));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) {
@@ -18,10 +22,14 @@ if (!GEMINI_API_KEY) {
 // โหลดโมเดล Teachable Machine
 let model;
 (async () => {
-  model = await tf.loadLayersModel(
-    "https://teachablemachine.withgoogle.com/models/I_d2z8vuR/model.json"
-  );
-  console.log("✅ โมเดล Teachable Machine โหลดเสร็จแล้ว");
+  try {
+    model = await tf.loadLayersModel(
+      "https://teachablemachine.withgoogle.com/models/I_d2z8vuR/model.json"
+    );
+    console.log("✅ โมเดล Teachable Machine โหลดเสร็จแล้ว");
+  } catch (err) {
+    console.error("❌ โหลดโมเดลล้มเหลว:", err);
+  }
 })();
 
 // ชื่อโรคตามโมเดล
@@ -71,7 +79,7 @@ app.post("/api/chat", async (req, res) => {
     let diseaseDetected = null;
     let diseaseConfidence = 0;
 
-    if (hasImage && imageData) {
+    if (hasImage && imageData && model) {
       const result = await analyzeImage(imageData, imageMimeType);
       if (result) {
         diseaseConfidence = result.maxScore;

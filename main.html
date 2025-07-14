@@ -564,6 +564,10 @@
       <input type="date" id="profileBirthday" placeholder="วันเกิด" />
       <input type="text" id="profileContact" placeholder="เฟสบุ๊กหรือไลน์" />
       <textarea id="profileAddress" placeholder="ที่อยู่" rows="3"></textarea>
+      <input type="text" id="profileSubdistrict" placeholder="ตำบล" />
+      <input type="text" id="profileDistrict" placeholder="อำเภอ" />
+      <input type="text" id="profileProvince" placeholder="จังหวัด" />
+
       <button type="submit">💾 บันทึก</button>
     </form>
   </div>
@@ -942,6 +946,10 @@ const profileEmail = document.getElementById('profileEmail');
 const profileBirthday = document.getElementById('profileBirthday');
 const profileContact = document.getElementById('profileContact');
 const profileAddress = document.getElementById('profileAddress');
+const profileSubdistrict = document.getElementById('profileSubdistrict');
+const profileDistrict = document.getElementById('profileDistrict');
+const profileProvince = document.getElementById('profileProvince');
+
 
 profileBtn.onclick = async () => {
   if (user) {
@@ -954,11 +962,19 @@ profileBtn.onclick = async () => {
       profileBirthday.value = data.birthday || '';
       profileContact.value = data.contact || '';
       profileAddress.value = data.address || '';
+
+      profileSubdistrict.value = data.subdistrict || '';
+      profileDistrict.value = data.district || '';
+      profileProvince.value = data.province || '';
     } else {
       profileName.value = user.displayName || '';
       profileBirthday.value = '';
       profileContact.value = '';
       profileAddress.value = '';
+
+      profileSubdistrict.value = '';
+      profileDistrict.value = '';
+      profileProvince.value = '';
     }
 
     profileEmail.value = user.email || '';
@@ -966,6 +982,7 @@ profileBtn.onclick = async () => {
     profileModal.focus();
   }
 };
+
 
 profileModalClose.onclick = () => {
   profileModal.style.display = 'none';
@@ -986,11 +1003,15 @@ profileForm.onsubmit = async (e) => {
       birthday: profileBirthday.value,
       contact: profileContact.value.trim(),
       address: profileAddress.value.trim(),
+
+      subdistrict: profileSubdistrict.value.trim(),
+      district: profileDistrict.value.trim(),
+      province: profileProvince.value.trim(),
     };
 
     await updateDoc(doc(db, "users", user.email), userData)
       .catch(async () => {
-        await setDoc(doc(db, "users", user.email), userData); // ถ้ายังไม่มี document ให้สร้างใหม่
+        await setDoc(doc(db, "users", user.email), userData);
       });
 
     alert("บันทึกข้อมูลผู้ใช้เรียบร้อยแล้ว");
@@ -999,6 +1020,7 @@ profileForm.onsubmit = async (e) => {
     alert("เกิดข้อผิดพลาด: " + error.message);
   }
 };
+
 
 
 const bigAddCowBtn = document.getElementById('bigAddCowBtn');

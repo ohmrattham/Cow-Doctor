@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>🐮 หมอวัว | แชทบอทโรควัว</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
   <style>
     /* Reset & Base Styles */
     * {
@@ -340,9 +339,11 @@
   </style>
 </head>
 <body>
+
   <div class="splash-screen" id="splashScreen">
     <img src="icon.png" alt="หมอวัวไอคอน" />
     <h1>หมอวัว</h1>
+    <p style="color:white; font-size:1.2rem; margin-top:10px;"></p>
   </div>
 
   <div class="chat-wrapper" id="chatWrapper">
@@ -363,218 +364,245 @@
           <img id="previewImage" alt="พรีวิวภาพ" />
           <button type="button" onclick="clearPreview()" title="ลบภาพ">✖</button>
         </div>
-
+        
         <input type="text" id="userInput" placeholder="พิมพ์คำถาม หรืออัปโหลดรูปภาพ..." autocomplete="off" />
       </div>
+      
       <button type="submit" class="send-btn" title="ส่งข้อความ">➤</button>
     </form>
   </div>
 
   <script>
-    const BACKEND_URL = 'https://your-app-name.herokuapp.com/api/chat';
-   const TM_MODEL_URL = "https://teachablemachine.withgoogle.com/models/I_d2z8vuR/";
+  // ** IMPORTANT: Connecting to Backend Server **
+  const BACKEND_URL = 'http://localhost:3000/api/chat'; 
+
+  const splashScreen = document.getElementById('splashScreen');
+  const chatWrapper = document.getElementById('chatWrapper');
+  const form = document.getElementById('chatForm');
+  const chatBox = document.getElementById('chatBox');
+  const input = document.getElementById('userInput');
+  const imageInputFile = document.getElementById('imageInputFile');
+  const imageInputCamera = document.getElementById('imageInputCamera');
+  const inputWrapper = document.getElementById('inputWrapper');
+  const previewOverlay = document.getElementById('previewOverlay');
+  const previewImage = document.getElementById('previewImage');
+  
+  let pendingImageData = null; // Stores Base64 data URL of the selected image
+  let pendingImageFile = null; // Stores File object of the selected image
+  const chatHistory = []; // Stores chat history to send to Backend for Gemini API
+  let typingIndicatorElement = null;
+
+  // Function to show splash screen and hide when loaded
+  function showChatAfterSplash() {
+    splashScreen.classList.add('hidden');
+    setTimeout(() => {
+      splashScreen.style.display = 'none';
+      chatWrapper.classList.add('show');
+      appendMessage('bot', {
+        type: 'text',
+        content: 'สวัสดีครับ **ผมหมอวัว** ยินดีให้คำปรึกษาเกี่ยวกับสุขภาพวัวของคุณ มีอะไรให้ช่วยไหมครับ?'
+      });
+    }, 500); // Wait 0.5 seconds after fade out
+  }
+
+  // Load splash screen when the page finishes loading
+  window.addEventListener('load', () => {
+    setTimeout(showChatAfterSplash, 2000); // Show splash screen for 2 seconds
+  });
+
+  // Handle form submission (when send button is pressed or Enter key)
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Prevent page reload
+    const text = input.value.trim();
+    const hasText = text.length > 0;
+    const hasImage = !!pendingImageData; // Check if there's an image in preview
+    
+    if (!hasText && !hasImage) return; // Don't send if no text or image
+
+    // Display user's message in Chat Box
+    if (hasText) appendMessage('user', { type: 'text', content: text });
+    if (hasImage) appendMessage('user', { type: 'image', content: pendingImageData });
+
+    input.value = '';
+    clearPreview(); // Clear input and preview
+    showTypingIndicator(); // Show typing indicator
+
+    try {
+      // Prepare data to send to Backend
+      const requestData = {
+  chatHistory: chatHistory,
+  hasImage: hasImage,
+  imageData: hasImage && pendingImageData ? pendingImageData.split(',')[1] : null,
+  imageMimeType: hasImage && pendingImageFile ? pendingImageFile.type : null,
+  textInput: text
+};
 
 
-    const splashScreen = document.getElementById('splashScreen');
-    const chatWrapper = document.getElementById('chatWrapper');
-    const form = document.getElementById('chatForm');
-    const chatBox = document.getElementById('chatBox');
-    const input = document.getElementById('userInput');
-    const imageInputFile = document.getElementById('imageInputFile');
-    const imageInputCamera = document.getElementById('imageInputCamera');
-    const inputWrapper = document.getElementById('inputWrapper');
-    const previewOverlay = document.getElementById('previewOverlay');
-    const previewImage = document.getElementById('previewImage');
+      // Send request to Backend Server
+      const response = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
 
-    let pendingImageData = null;
-    let pendingImageFile = null;
-    const chatHistory = [];
-    let typingIndicatorElement = null;
-    let tmModel, webcam, isTMRunning = false;
+      const data = await response.json();
+      hideTypingIndicator(); // Hide typing indicator
 
-    window.addEventListener('load', () => {
-      setTimeout(showChatAfterSplash, 2000);
-      loadTeachableMachine();
-    });
-
-    function showChatAfterSplash() {
-      splashScreen.classList.add('hidden');
-      setTimeout(() => {
-        splashScreen.style.display = 'none';
-        chatWrapper.classList.add('show');
-        appendMessage('bot', {
-          type: 'text',
-          content: 'สวัสดีครับ **ผมหมอวัว** ยินดีให้คำปรึกษาเกี่ยวกับสุขภาพวัวของคุณ มีอะไรให้ช่วยไหมครับ?'
-        });
-      }, 500);
-    }
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = input.value.trim();
-      const hasText = text.length > 0;
-      const hasImage = !!pendingImageData;
-
-      if (!hasText && !hasImage) return;
-      if (hasText) appendMessage('user', { type: 'text', content: text });
-      if (hasImage) appendMessage('user', { type: 'image', content: pendingImageData });
-
-      input.value = '';
-      clearPreview();
-      showTypingIndicator();
-
-      try {
-        const requestData = {
-          chatHistory,
-          hasImage,
-          imageData: hasImage && pendingImageData ? pendingImageData.split(',')[1] : null,
-          imageMimeType: hasImage && pendingImageFile ? pendingImageFile.type : null,
-          textInput: text
-        };
-
-        const response = await fetch(BACKEND_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestData)
-        });
-
-        const data = await response.json();
-        hideTypingIndicator();
-
-        if (response.ok) {
-          const reply = data.reply;
-          appendMessage('bot', { type: 'text', content: reply });
-          if (hasText) chatHistory.push({ role: 'user', parts: [{ text }] });
-          chatHistory.push({ role: 'model', parts: [{ text: reply }] });
-        } else {
-          appendMessage('bot', { type: 'text', content: data.error || '⚠️ เกิดข้อผิดพลาด โปรดลองใหม่อีกครั้ง' });
+      if (response.ok) { // If Backend sends a 2xx status
+        const reply = data.reply;
+        appendMessage('bot', { type: 'text', content: reply });
+        
+        // Add user's message to chatHistory.
+        // For vision, the image part should ideally be handled by the backend's history
+        // to fully reflect the multi-modal turn, but for a simple frontend
+        // we'll just push the text part here if available.
+        if (hasText) {
+          chatHistory.push({ role: 'user', parts: [{ text: text }] });
         }
-      } catch (err) {
-        hideTypingIndicator();
-        appendMessage('bot', { type: 'text', content: '⚠️ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้' });
+        // If image was present, and backend correctly processed it for vision model,
+        // then the backend's chat history should reflect it.
+        // The reply is always text, so we add it to history.
+        chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+
+      } else {
+        // Handle errors from Backend Server
+        let errorMessage = '⚠️ เกิดข้อผิดพลาดในการประมวลผลคำขอของคุณ โปรดลองใหม่อีกครั้ง';
+        if (data.error) {
+          errorMessage = `⚠️ ${data.error}`;
+        }
+        appendMessage('bot', { type: 'text', content: errorMessage });
+        console.error('Backend Error:', data);
       }
-    });
 
-    imageInputFile.addEventListener('change', (e) => handleImageSelection(e.target.files[0]));
-    imageInputCamera.addEventListener('change', (e) => handleImageSelection(e.target.files[0]));
+    } catch (err) {
+      hideTypingIndicator();
+      appendMessage('bot', { type: 'text', content: '⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ โปรดตรวจสอบการเชื่อมต่อของคุณ' });
+      console.error('Fetch Error to Backend:', err);
+    }
+  });
 
-    function handleImageSelection(file) {
-      if (!file || !file.type.startsWith('image/')) return;
-      pendingImageFile = file;
-      const reader = new FileReader();
-      reader.onload = () => {
-        pendingImageData = reader.result;
-        previewImage.src = reader.result;
-        previewOverlay.style.display = 'flex';
-        inputWrapper.classList.add('has-image');
-        input.placeholder = 'เพิ่มคำถามของคุณที่นี่...';
-        input.focus();
-      };
-      reader.readAsDataURL(file);
+  // Event Listener for image file selection
+  imageInputFile.addEventListener('change', (e) => handleImageSelection(e.target.files[0]));
+  imageInputCamera.addEventListener('change', (e) => handleImageSelection(e.target.files[0]));
+
+  // Function to handle image selection
+  function handleImageSelection(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+      imageInputFile.value = ''; // Clear input file value
+      imageInputCamera.value = ''; // Clear camera input value
+      return;
     }
 
-    function clearPreview() {
-      previewOverlay.style.display = 'none';
-      previewImage.src = '';
-      pendingImageData = null;
-      pendingImageFile = null;
-      inputWrapper.classList.remove('has-image');
-      input.placeholder = 'พิมพ์คำถาม หรืออัปโหลดรูปภาพอาการวัว...';
-      imageInputFile.value = '';
-      imageInputCamera.value = '';
-    }
+    pendingImageFile = file;
+    const reader = new FileReader();
 
-    function appendMessage(sender, message) {
-      const row = document.createElement('div');
-      row.className = `chat-row ${sender}`;
-      if (sender === 'bot') {
-        const avatar = document.createElement('img');
-        avatar.src = 'icon.png';
-        avatar.alt = 'หมอวัว';
-        avatar.className = 'avatar';
-        row.appendChild(avatar);
-      }
-      const bubble = document.createElement('div');
-      bubble.className = `chat-bubble ${sender}`;
-      if (message.type === 'text') {
-        bubble.innerHTML = formatText(message.content);
-      } else if (message.type === 'image') {
-        const img = document.createElement('img');
-        img.src = message.content;
-        img.className = 'chat-image';
-        bubble.appendChild(img);
-      }
-      row.appendChild(bubble);
-      chatBox.appendChild(row);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+    reader.onload = () => {
+      pendingImageData = reader.result; // Store Base64 data URL
+      previewImage.src = reader.result; // Display image in preview
+      
+      previewOverlay.style.display = 'flex'; // Show preview overlay
+      inputWrapper.classList.add('has-image'); // Add class to adjust layout
+      input.placeholder = 'เพิ่มคำถามของคุณที่นี่...';
+      input.focus();
+    };
 
-    function formatText(text) {
-      text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      text = text.split('\n').map(line =>
-        line.startsWith('- ') ? `<li>${line.substring(2)}</li>` : line
-      ).join('\n');
-      if (text.includes('<li>')) text = `<ul>${text}</ul>`;
-      return text.replace(/\n/g, '<br>');
-    }
+    reader.readAsDataURL(file); // Read file as Base64 data URL
+  }
 
-    function showTypingIndicator() {
-      if (typingIndicatorElement) hideTypingIndicator();
-      const row = document.createElement('div');
-      row.className = 'chat-row bot';
+  // Function to clear image in preview
+  function clearPreview() {
+    previewOverlay.style.display = 'none';
+    previewImage.src = '';
+    // ✅ แก้ไข: ลบบรรทัดนี้ออก เพราะ 'previewFileName' ไม่ได้ถูกประกาศ/ไม่มีใน HTML แล้ว
+    // previewFileName.textContent = ''; 
+    pendingImageData = null;
+    pendingImageFile = null;
+    inputWrapper.classList.remove('has-image');
+    input.placeholder = 'พิมพ์คำถาม หรืออัปโหลดรูปภาพอาการวัว...';
+    imageInputFile.value = ''; // Clear input file value
+    imageInputCamera.value = ''; // Clear camera input value
+  }
+
+  // Function to add message to Chat Box
+  function appendMessage(sender, message) {
+    const row = document.createElement('div');
+    row.className = `chat-row ${sender}`;
+    if (sender === 'bot') {
       const avatar = document.createElement('img');
-      avatar.src = 'icon.png';
+      avatar.src = 'icon.png'; // Ensure icon.png is in the same folder
       avatar.alt = 'หมอวัว';
       avatar.className = 'avatar';
       row.appendChild(avatar);
-      typingIndicatorElement = document.createElement('div');
-      typingIndicatorElement.className = 'typing-indicator chat-bubble bot';
-      typingIndicatorElement.innerHTML = '<span>.</span><span>.</span><span>.</span>';
-      row.appendChild(typingIndicatorElement);
-      chatBox.appendChild(row);
-      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function hideTypingIndicator() {
-      if (typingIndicatorElement?.parentNode) {
-        const parentRow = typingIndicatorElement.closest('.chat-row');
-        if (parentRow) chatBox.removeChild(parentRow);
-        typingIndicatorElement = null;
-      }
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${sender}`;
+    if (message.type === 'text') {
+      bubble.innerHTML = formatText(message.content); // Format text
+    } else if (message.type === 'image') {
+      const img = document.createElement('img');
+      img.src = message.content;
+      img.className = 'chat-image';
+      bubble.appendChild(img);
     }
 
-    // Teachable Machine functions
-    async function loadTeachableMachine() {
-      const modelURL = TM_MODEL_URL + "model.json";
-      const metadataURL = TM_MODEL_URL + "metadata.json";
-      tmModel = await tmImage.load(modelURL, metadataURL);
-      webcam = new tmImage.Webcam(200, 200, true);
-      await webcam.setup();
-      await webcam.play();
-      const div = document.createElement('div');
-      div.style.position = "fixed";
-      div.style.right = "10px";
-      div.style.bottom = "10px";
-      div.style.border = "2px solid green";
-      div.appendChild(webcam.canvas);
-      document.body.appendChild(div);
-      window.requestAnimationFrame(runPrediction);
-    }
+    row.appendChild(bubble);
+    chatBox.appendChild(row);
+    chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
+  }
 
-    async function runPrediction() {
-      webcam.update();
-      const predictions = await tmModel.predict(webcam.canvas);
-      const best = predictions.reduce((a, b) => a.probability > b.probability ? a : b);
-      if (best.probability > 0.95 && !isTMRunning) {
-        isTMRunning = true;
-        appendMessage('bot', { type: 'text', content: `ผมตรวจพบว่า: **${best.className}** จากกล้องครับ` });
-        chatHistory.push({ role: 'user', parts: [{ text: `แสดงภาพ ${best.className}` }] });
-        chatHistory.push({ role: 'model', parts: [{ text: `ผมตรวจพบว่า: ${best.className}` }] });
-        setTimeout(() => isTMRunning = false, 5000);
-      }
-      window.requestAnimationFrame(runPrediction);
+  // Function to format text (e.g., bold, italic, list)
+  function formatText(text) {
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // **bold**
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>'); // *italic*
+    // Handle lists
+    text = text.split('\n').map(line =>
+      line.startsWith('- ') ? `<li>${line.substring(2)}</li>` : line
+    ).join('\n');
+    if (text.includes('<li>')) text = `<ul>${text}</ul>`;
+    return text.replace(/\n/g, '<br>'); // Change newline to <br>
+  }
+
+  // Function to show Typing Indicator
+  function showTypingIndicator() {
+    if (typingIndicatorElement) hideTypingIndicator(); // Hide existing one if any
+    const row = document.createElement('div');
+    row.className = 'chat-row bot';
+
+    const avatar = document.createElement('img');
+    avatar.src = 'icon.png';
+    avatar.alt = 'หมอวัว';
+    avatar.className = 'avatar';
+    row.appendChild(avatar);
+
+    typingIndicatorElement = document.createElement('div');
+    typingIndicatorElement.className = 'typing-indicator chat-bubble bot';
+    typingIndicatorElement.innerHTML = '<span>.</span><span>.</span><span>.</span>';
+    row.appendChild(typingIndicatorElement);
+    chatBox.appendChild(row);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  // Function to hide Typing Indicator
+  function hideTypingIndicator() {
+    if (typingIndicatorElement?.parentNode) {
+      const parentRow = typingIndicatorElement.closest('.chat-row');
+      if (parentRow) chatBox.removeChild(parentRow);
+      typingIndicatorElement = null;
     }
-  </script>
+  }
+
+  // Function to adjust viewport height for mobile devices (vh fix)
+  function setFullHeight() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+
+  window.addEventListener('resize', setFullHeight);
+  window.addEventListener('orientationchange', setFullHeight);
+  setFullHeight(); // Call on initial load
+</script>
+
 </body>
 </html>
